@@ -1,0 +1,47 @@
+name: Executar Automação PS Proteção
+
+on:
+  schedule:
+    # Executa a cada 2 horas (UTC) - 12 vezes por dia
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Permite rodar manualmente pelo painel do GitHub
+
+jobs:
+  run-automation:
+    runs-on: ubuntu-latest
+    
+    # Concede permissão de escrita para que a automação possa atualizar o arquivo postados.json no repositório
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install -r ps_protecao/requirements.txt
+
+      - name: Run Automation
+        env:
+          SHEETS_CSV_URL: ${{ secrets.PS_SHEETS_CSV_URL }}
+          WP_URL: ${{ secrets.PS_WP_URL }}
+          WP_USER: ${{ secrets.PS_WP_USER }}
+          WP_APP_PASSWORD: ${{ secrets.PS_WP_APP_PASSWORD }}
+        run: |
+          python ps_protecao/src/main.py
+
+      - name: Commit and push changes
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add ps_protecao/postados.json
+          # Só commita e faz push se houver alterações no arquivo postados.json
+          git diff --quiet && git diff --staged --quiet || (git commit -m "Automático: Atualiza postados.json [PS Proteção]" && git push)
