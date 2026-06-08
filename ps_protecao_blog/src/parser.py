@@ -31,11 +31,13 @@ def parse_markdown_file(filepath: str) -> dict:
     for line in lines:
         cleaned_line = line.strip()
         
-        # 1. Tenta extrair o Titulo do Post (iniciando com #)
+        # 1. Tenta extrair o Titulo do Post (iniciando com #) - Apenas a primeira ocorrencia!
         title_match = title_pat.match(cleaned_line)
         if title_match:
-            title = title_match.group(1).strip()
-            continue
+            if not title:
+                title = title_match.group(1).strip()
+                continue
+
 
         # 2. Ignora o Meta Title (usado apenas no SEO Yoast/RankMath local)
         if meta_title_pat.match(cleaned_line):
